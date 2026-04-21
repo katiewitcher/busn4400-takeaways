@@ -1,0 +1,313 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Speaker Takeaways</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #0b0f1a;
+    display: flex; align-items: center; justify-content: center;
+  }
+  #root { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useCallback, useRef } = React;
+
+/* ── Data ───────────────────────────────────────────────────── */
+const SPEAKERS = [
+  { id:'jjones',  name:'Jeff Jones',      company:'Ad Victoriam',       quadrant:'operator-tolerant', photo:'uploads/0ed63fde-7931-469d-8ce1-c10cc31668dc.png',
+    takeaways:['Likability → trust → knowledge: be likable before technically impressive','Every role adds to your tool belt — even the ones you don\'t love','Adopt AI or be doing something else somewhere else','Starting a company requires ego + a certain "stupidity"'] },
+  { id:'aruben',  name:'Andy Ruben',      company:'Trove',              quadrant:'operator-tolerant', photo:'uploads/59c5f3ea-1d82-4f52-80d1-c97d635e9db1.png',
+    takeaways:['Never waste a good crisis','Radical accountability — if it goes wrong on your watch, it\'s on you','AI is a team of thousands working for you','Curiosity is a genuine competitive advantage'] },
+  { id:'tstevens',name:'Todd Stevens',    company:'Figure',             quadrant:'operator-tolerant', photo:'uploads/4d596ce5-3d21-45af-adbd-d441f0cfc02b.png',
+    takeaways:['Your 20s are the best time to take risks','Evaluate startups: founder + PMF + capital','Blockchain will disrupt finance more than AI','Stay even-keeled — never as good or bad as it seems'] },
+  { id:'vwest',   name:'Vincent West',    company:'Floor & Decor',      quadrant:'operator-tolerant', photo:'uploads/c7363022-05a3-497b-880b-024c5f72537f.png',
+    takeaways:['Find one reason why something might work','Two types of people: fairway vs. swing for fences','If you haven\'t failed, you haven\'t tried','Biggest regret: not taking UGA seriously'] },
+  { id:'mmetz',   name:'Mark Metz',       company:'ReluTech',           quadrant:'builder-tolerant',  photo:'uploads/1671825722412.jpg',
+    takeaways:['Execution beats ideas','Sales skills are the most underrated','Work in-person at a small company early','Drunken lawn darts: throw a lot, double down on what works'] },
+  { id:'kbishop', name:'Kelsey Bishop',   company:'Candor',             quadrant:'builder-tolerant',  photo:'uploads/3c12eb77-a97a-452b-938c-e627dbd4116c.png',
+    takeaways:['Know yourself before evaluating where to work','Compounding works on the downside too','Cold emails get answered more now than they ever will','Nobody is a victim of their own life'] },
+  { id:'hcarver', name:'Hannah Carver',   company:'Made by Carver',     quadrant:'builder-tolerant',  photo:'uploads/fdac7763-5705-4bf7-b4f0-e78847620684.png',
+    takeaways:['Have more audacity — no rules right now','AI is a data aggregator, never an original idea','Learn to say no to protect your north star','Screenshot validating feedback to fight imposter syndrome'] },
+  { id:'bjschak', name:'BJ Schaknowski', company:'Couchbase',          quadrant:'operator-averse',   photo:'uploads/d0fe93e4-45ba-422a-81b5-ec75462e54f7.png',
+    takeaways:['Vulnerability-based trust enables hard conversations','Brilliant assholes destroy any team — hire for humility','Never leave a job to do the same thing again','PE vs VC: VC is gambling, PE is transformation'] },
+  { id:'abrown',  name:'Angie Brown',     company:'Home Depot',         quadrant:'operator-averse',   photo:'uploads/69291425-b34e-4bd8-b619-a421f15d882f.png',
+    takeaways:['Be willing to try things you don\'t understand yet','Start with the business problem, then ask if AI can help','AI is the co-pilot, humans are the pilot','You\'ll never have all the answers — draw on a bigger pool'] },
+  { id:'jsurber', name:'Joe Surber',      company:'Assurant',           quadrant:'operator-averse',   photo:'uploads/0c41fefe-400d-40b2-9ff5-b8fefee404e9.png',
+    takeaways:['The world is run by tryhards — effort is underrated','MIS superpower: translation between biz and tech','Be a net-giver in your network','T-shaped talent: broad exposure, deep in one area'] },
+  { id:'jcanney', name:'Jacqui Canney',   company:'ServiceNow',         quadrant:'operator-averse',   photo:'uploads/c8b96dd7-0b01-4e4e-8d9e-0e35595d1ccb.png',
+    takeaways:['AI transformation is a people problem, not a tech problem','Governance speeds you up safely','Do what you say — that\'s how trust is built','93% of AI spend goes to tech, 7% to people — that\'s the problem'] },
+  { id:'crhodes', name:'Chris Rhodes',    company:'UGA Innovation',     quadrant:'operator-averse',   photo:'uploads/55056625-a193-406c-b03d-c5cc2d7f5bb7.png',
+    takeaways:['A good idea in your head is not a good idea in the market','Pivot for the right reasons with the right evidence','No one owes you anything — persistence is the primary founder trait','Early career: focus on becoming an expert'] },
+  { id:'rbalta',  name:'Roy Ben-Alta',    company:'Oakie.ai',           quadrant:'builder-averse',    photo:'uploads/fa39f13f-f5a0-499f-8e6d-573d7c9dbfc5.png',
+    takeaways:['Behind every great AI agent is a greater human','Technology is easy — finding customers is hard','AI governance: security officer at the table from day one','Career: stay if 2 of 3 — satisfaction, compensation, learning'] },
+  { id:'jbogan',  name:'Jeff Bogan',      company:'Upgrade',            quadrant:'builder-averse',    photo:'uploads/73bdc83f-573d-4b23-8851-8796feee0f45.png',
+    takeaways:['If you don\'t know AI tools, you won\'t get hired','Nothing kills credibility faster than errors','Be the most prepared person in the room','Pick your manager over the company name'] },
+];
+
+/* ── Theme ──────────────────────────────────────────────────── */
+const GOLD   = '#c9a55a';
+const CREAM  = '#ede8de';
+const MUTED  = 'rgba(237,232,222,0.4)';
+const BG     = '#0b0f1a';
+const CARD   = '#111827';
+const LINE   = 'rgba(237,232,222,0.09)';
+const SERIF  = "'Libre Baskerville', Georgia, serif";
+const SANS   = "'DM Sans', sans-serif";
+
+function getInitials(name) { return name.split(' ').map(p=>p[0]).join('').slice(0,2).toUpperCase(); }
+
+/* ── Speaker card ───────────────────────────────────────────── */
+function SpeakerCard({ speaker, flipped, onFlip }) {
+  const [showBack, setShowBack] = useState(false);
+  const [phase, setPhase]       = useState('idle');
+  const timer = useRef(null);
+
+  useEffect(() => {
+    clearTimeout(timer.current);
+    setPhase('fold');
+    timer.current = setTimeout(() => {
+      setShowBack(flipped);
+      setPhase('unfold');
+      timer.current = setTimeout(() => setPhase('idle'), 210);
+    }, 210);
+    return () => clearTimeout(timer.current);
+  }, [flipped]);
+
+  const sx = phase === 'fold' ? 0 : 1;
+
+  return (
+    <div onClick={onFlip} style={{ width:114, height:188, cursor:'pointer', userSelect:'none', position:'relative', flexShrink:0 }}>
+      <div style={{ position:'absolute', inset:0, transform:`scaleX(${sx})`, transition: phase!=='idle'?`transform 210ms cubic-bezier(0.4,0,0.6,1)`:'none', transformOrigin:'center' }}>
+
+        {!showBack ? (
+          /* FRONT */
+          <div style={{ width:'100%', height:'100%', display:'flex', flexDirection:'column', alignItems:'center', gap:7, paddingTop:6 }}>
+            <div style={{ width:68, height:68, borderRadius:'50%', border:`2px solid ${GOLD}`, overflow:'hidden', flexShrink:0, background:CARD, display:'flex', alignItems:'center', justifyContent:'center', boxShadow:`0 0 0 4px rgba(201,165,90,0.1)` }}>
+              {speaker.photo
+                ? <img src={speaker.photo} alt={speaker.name} style={{ width:'100%', height:'100%', objectFit:'cover', objectPosition:'center top' }} />
+                : <span style={{ color:GOLD, fontWeight:700, fontSize:18, fontFamily:SERIF }}>{getInitials(speaker.name)}</span>}
+            </div>
+            <div style={{ textAlign:'center', padding:'0 6px', width:'100%' }}>
+              <div style={{ fontSize:10.5, fontWeight:600, color:CREAM, lineHeight:1.3, fontFamily:SANS }}>{speaker.name}</div>
+              <div style={{ fontSize:9, color:MUTED, marginTop:3, lineHeight:1.3, fontFamily:SANS }}>{speaker.company}</div>
+            </div>
+            <div style={{ fontSize:8, color:'rgba(237,232,222,0.2)', letterSpacing:'0.12em', fontFamily:SANS, textTransform:'uppercase' }}>tap</div>
+          </div>
+        ) : (
+          /* BACK */
+          <div style={{ width:'100%', height:'100%', background:'#16203a', borderRadius:10, border:`1px solid rgba(201,165,90,0.2)`, padding:'8px 8px 6px', display:'flex', flexDirection:'column', boxShadow:`0 4px 20px rgba(0,0,0,0.4)` }}>
+            <div style={{ fontSize:8, fontWeight:700, color:GOLD, letterSpacing:'0.12em', marginBottom:5, textTransform:'uppercase', fontFamily:SANS, flexShrink:0 }}>{speaker.name.split(' ')[0]}</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:3, flex:1, overflow:'hidden' }}>
+              {speaker.takeaways.map((t,i) => (
+                <div key={i} style={{ display:'flex', gap:4, alignItems:'flex-start', flexShrink:0 }}>
+                  <span style={{ color:GOLD, fontSize:7, marginTop:2, flexShrink:0 }}>▸</span>
+                  <span style={{ fontSize:8, color:'rgba(237,232,222,0.85)', lineHeight:1.3, fontFamily:SANS }}>{t}</span>
+                </div>
+              ))}
+            </div>
+            <div style={{ fontSize:7, color:'rgba(237,232,222,0.2)', paddingTop:3, textAlign:'center', letterSpacing:'0.1em', fontFamily:SANS, textTransform:'uppercase', flexShrink:0 }}>tap to close</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Quadrant layout helper ─────────────────────────────────── */
+function QuadrantGrid({ speakers, flippedId, onFlip }) {
+  const n = speakers.length;
+  // Pick columns so cards distribute evenly without orphans where possible
+  const cols = n <= 2 ? n : n === 3 ? 3 : n === 4 ? 2 : n === 5 ? 3 : 3;
+
+  // For 5 speakers with 3 cols: 3+2, render manually to center bottom row
+  if (n === 5) {
+    return (
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', gap:6 }}>
+        <div style={{ display:'flex', gap:6 }}>
+          {speakers.slice(0,3).map(s => <SpeakerCard key={s.id} speaker={s} flipped={flippedId===s.id} onFlip={()=>onFlip(s.id)} />)}
+        </div>
+        <div style={{ display:'flex', gap:6 }}>
+          {speakers.slice(3).map(s => <SpeakerCard key={s.id} speaker={s} flipped={flippedId===s.id} onFlip={()=>onFlip(s.id)} />)}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display:'grid', gridTemplateColumns:`repeat(${cols}, 114px)`, gap:6, justifyContent:'center' }}>
+      {speakers.map(s => <SpeakerCard key={s.id} speaker={s} flipped={flippedId===s.id} onFlip={()=>onFlip(s.id)} />)}
+    </div>
+  );
+}
+
+/* ── Quadrant cell ──────────────────────────────────────────── */
+function Quadrant({ speakers, flippedId, onFlip, cellH }) {
+  return (
+    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', padding:'12px', position:'relative', height: cellH, overflow:'hidden' }}>
+      <QuadrantGrid speakers={speakers} flippedId={flippedId} onFlip={onFlip} />
+    </div>
+  );
+}
+
+/* ── App ────────────────────────────────────────────────────── */
+const QS = ['operator-tolerant','builder-tolerant','operator-averse','builder-averse'];
+
+function App() {
+  const [flippedId, setFlippedId] = useState(null);
+  const [scale, setScale]         = useState(1);
+
+  const W = 980, H = 800;
+
+  // Tweakable quadrant top offsets
+  const [tweak, setTweak] = useState(/*EDITMODE-BEGIN*/{
+    "opTolTop": 65,
+    "blTolTop": 68,
+    "opAvTop": 88,
+    "blAvTop": 102
+  }/*EDITMODE-END*/);
+  const [showTweaks, setShowTweaks] = useState(false);
+
+  useEffect(() => {
+    window.addEventListener('message', e => {
+      if (e.data?.type === '__activate_edit_mode')   setShowTweaks(true);
+      if (e.data?.type === '__deactivate_edit_mode') setShowTweaks(false);
+    });
+    window.parent.postMessage({ type: '__edit_mode_available' }, '*');
+  }, []);
+
+  const setT = (key, val) => {
+    const next = { ...tweak, [key]: val };
+    setTweak(next);
+    window.parent.postMessage({ type: '__edit_mode_set_keys', edits: next }, '*');
+  };
+
+  useEffect(() => {
+    const calc = () => {
+      const sw = window.innerWidth  || 1280;
+      const sh = window.innerHeight || 800;
+      const s  = Math.min(sw / (W + 130), sh / (H + 200), 1);
+      if (s > 0 && isFinite(s)) setScale(+(s.toFixed(3)));
+    };
+    const t = setTimeout(calc, 60);
+    window.addEventListener('resize', calc);
+    return () => { clearTimeout(t); window.removeEventListener('resize', calc); };
+  }, []);
+
+  const flip = useCallback(id => setFlippedId(p => p===id ? null : id), []);
+
+  const byQ = {};
+  QS.forEach(q => { byQ[q] = []; });
+  SPEAKERS.forEach(s => { if(byQ[s.quadrant]) byQ[s.quadrant].push(s); });
+
+  return (
+    <div style={{ transform:`scale(${scale})`, transformOrigin:'center center', display:'flex', flexDirection:'column', alignItems:'center', width: W + 130 }}>
+
+      {/* Title */}
+      <div style={{ marginBottom:22, textAlign:'center' }}>
+        <div style={{ fontSize:10, letterSpacing:'0.28em', color:MUTED, textTransform:'uppercase', fontFamily:SANS, marginBottom:6 }}>BUSN 4400 · Speaker Takeaways</div>
+        <div style={{ fontSize:30, fontWeight:400, color:CREAM, letterSpacing:'-0.02em', fontFamily:SERIF, fontStyle:'italic' }}>The Matrix</div>
+      </div>
+
+      <div style={{ display:'flex', alignItems:'stretch', gap:16 }}>
+
+        {/* Y-axis */}
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', width:44, height:H }}>
+          <div style={{ writingMode:'vertical-rl', transform:'rotate(180deg)', fontSize:10, fontWeight:500, letterSpacing:'0.16em', color:CREAM, textTransform:'uppercase', fontFamily:SANS, whiteSpace:'nowrap', flexShrink:0 }}>Risk Tolerant</div>
+          <div style={{ flex:1, display:'flex', alignItems:'center', flexDirection:'column', padding:'4px 0' }}>
+            <div style={{ width:1, flex:1, background:LINE }} />
+            <div style={{ width:6, height:1, background:`rgba(237,232,222,0.2)`, margin:'2px 0' }} />
+            <div style={{ width:1, flex:1, background:LINE }} />
+          </div>
+          <div style={{ writingMode:'vertical-rl', transform:'rotate(180deg)', fontSize:10, fontWeight:500, letterSpacing:'0.16em', color:CREAM, textTransform:'uppercase', fontFamily:SANS, whiteSpace:'nowrap', flexShrink:0 }}>Risk Averse</div>
+        </div>
+
+        {/* Matrix column */}
+        <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
+
+          {/* X-axis top */}
+          <div style={{ display:'flex', width:W, marginBottom:8, alignItems:'center' }}>
+            <div style={{ flex:1, textAlign:'center', fontSize:10, fontWeight:500, letterSpacing:'0.16em', color:CREAM, textTransform:'uppercase', fontFamily:SANS }}>Operator</div>
+            <div style={{ flex:1, textAlign:'center', fontSize:10, fontWeight:500, letterSpacing:'0.16em', color:CREAM, textTransform:'uppercase', fontFamily:SANS }}>Builder</div>
+          </div>
+
+          {/* Grid */}
+          <div style={{ width:W, height:H, display:'flex', flexDirection:'column', background:CARD, border:`1px solid ${LINE}`, borderRadius:6, overflow:'hidden', position:'relative', boxShadow:'0 8px 40px rgba(0,0,0,0.5)' }}>
+            {/* Grid lines */}
+            <div style={{ position:'absolute', top:0, bottom:0, left:'50%', width:1, background:LINE, zIndex:5, pointerEvents:'none' }} />
+            <div style={{ position:'absolute', left:0, right:0, top:'50%', height:1, background:LINE, zIndex:5, pointerEvents:'none' }} />
+
+            {/* Top row */}
+            <div style={{ display:'flex', width:W, height:H/2, flexShrink:0 }}>
+              <div style={{ width:W/2, height:H/2, display:'flex', alignItems:'center', justifyContent:'center', paddingTop:tweak.opTolTop, paddingBottom:12, paddingLeft:12, paddingRight:12, overflow:'visible' }}>
+                <QuadrantGrid speakers={byQ['operator-tolerant']} flippedId={flippedId} onFlip={flip} />
+              </div>
+              <div style={{ width:W/2, height:H/2, display:'flex', alignItems:'center', justifyContent:'center', paddingTop:tweak.blTolTop, paddingBottom:12, paddingLeft:12, paddingRight:12, overflow:'visible' }}>
+                <QuadrantGrid speakers={byQ['builder-tolerant']} flippedId={flippedId} onFlip={flip} />
+              </div>
+            </div>
+            {/* Bottom row */}
+            <div style={{ display:'flex', width:W, height:H/2, flexShrink:0 }}>
+              <div style={{ width:W/2, height:H/2, display:'flex', alignItems:'center', justifyContent:'center', paddingTop:tweak.opAvTop, paddingBottom:12, paddingLeft:12, paddingRight:12, overflow:'visible' }}>
+                <QuadrantGrid speakers={byQ['operator-averse']} flippedId={flippedId} onFlip={flip} />
+              </div>
+              <div style={{ width:W/2, height:H/2, display:'flex', alignItems:'center', justifyContent:'center', paddingTop:tweak.blAvTop, paddingBottom:12, paddingLeft:12, paddingRight:12, overflow:'visible' }}>
+                <QuadrantGrid speakers={byQ['builder-averse']} flippedId={flippedId} onFlip={flip} />
+              </div>
+            </div>
+          </div>
+
+          {/* X-axis subtitles */}
+          <div style={{ display:'flex', width:W, marginTop:6 }}>
+            <div style={{ flex:1, textAlign:'center', fontSize:9, color:MUTED, letterSpacing:'0.06em', fontFamily:SANS }}>scale &amp; optimize</div>
+            <div style={{ flex:1, textAlign:'center', fontSize:9, color:MUTED, letterSpacing:'0.06em', fontFamily:SANS }}>create &amp; build</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div style={{ marginTop:16, fontSize:9, color:'rgba(237,232,222,0.18)', letterSpacing:'0.12em', fontFamily:SANS, textTransform:'uppercase' }}>
+        Click any speaker to reveal their takeaways
+      </div>
+
+      {/* Tweaks panel */}
+      {showTweaks && (
+        <div style={{ position:'fixed', bottom:24, right:24, background:'#16203a', border:'1px solid rgba(201,165,90,0.3)', borderRadius:10, padding:'16px 18px', zIndex:1000, boxShadow:'0 8px 32px rgba(0,0,0,0.6)', width:240 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:GOLD, letterSpacing:'0.12em', textTransform:'uppercase', fontFamily:SANS, marginBottom:14 }}>Tweaks</div>
+          {[
+            { key:'opTolTop', label:'Operator · Tolerant offset' },
+            { key:'blTolTop', label:'Builder · Tolerant offset' },
+            { key:'opAvTop',  label:'Operator · Averse offset' },
+            { key:'blAvTop',  label:'Builder · Averse offset' },
+          ].map(({key, label}) => (
+            <div key={key} style={{ marginBottom:12 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', fontSize:9.5, color:CREAM, fontFamily:SANS, marginBottom:4 }}>
+                <span>{label}</span><span style={{ color:GOLD }}>{tweak[key]}px</span>
+              </div>
+              <input type="range" min={0} max={120} value={tweak[key]}
+                onChange={e => setT(key, +e.target.value)}
+                style={{ width:'100%', accentColor:GOLD, cursor:'pointer' }}
+              />
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
